@@ -1,8 +1,8 @@
+// Contact page with EmailJS integration (vanilla JS, no innerHTML)
 import "../assets/styles/contact.css";
-import { navigate } from "../router.js";
 
-export default function contact(container)  {
-  // Helper funcional para crear elementos
+export default function contact(container) {
+  // Helper function to create elements
   function $(tag, props = {}, ...children) {
     const el = document.createElement(tag);
     Object.entries(props).forEach(([k, v]) => {
@@ -30,21 +30,40 @@ export default function contact(container)  {
 
   container.innerHTML = "";
 
-  const successMsg = $("div", { class: "contact-success", style: { display: "none" } }, "Your message has been sent! (simulated)");
+  // Inputs with 'name' attributes required by EmailJS
+  const nameInput = $("input", {
+    type: "text",
+    class: "contact-input",
+    id: "contact-name",
+    name: "from_name", // EmailJS variable
+    placeholder: "Your name",
+    required: true
+  });
+  const emailInput = $("input", {
+    type: "email",
+    class: "contact-input",
+    id: "contact-email",
+    name: "from_email", // EmailJS variable
+    placeholder: "Your email",
+    required: true
+  });
+  const messageInput = $("textarea", {
+    class: "contact-input",
+    id: "contact-message",
+    name: "message", // EmailJS variable
+    placeholder: "Your message",
+    rows: 4,
+    required: true
+  });
 
-  const nameInput = $("input", { type: "text", class: "contact-input", id: "contact-name", placeholder: "Your name", required: true });
-  const emailInput = $("input", { type: "email", class: "contact-input", id: "contact-email", placeholder: "Your email", required: true });
-  const messageInput = $("textarea", { class: "contact-input", id: "contact-message", placeholder: "Your message", rows: 4, required: true });
+  // Success message (hidden by default)
+  const successMsg = $("div", {
+    class: "contact-success",
+    style: { display: "none" }
+  }, "Your message has been sent! (simulated)");
 
-  const form = $("form", { class: "contact-form", onsubmit: e => {
-    e.preventDefault();
-    successMsg.style.display = "block";
-    setTimeout(() => {
-      successMsg.style.display = "none";
-      form.reset();
-      navigate("/home"); // <-- Redirige a Home después de mostrar el mensaje.
-    }, 2500);
-  }},
+  // Contact form
+  const form = $("form", { class: "contact-form" },
     $("label", { for: "contact-name" }, "Name"),
     nameInput,
     $("label", { for: "contact-email" }, "Email"),
@@ -55,6 +74,31 @@ export default function contact(container)  {
     successMsg
   );
 
+  // EmailJS integration on submit
+  form.addEventListener("submit", function(e) {
+    e.preventDefault();
+    // Opcional: validaciones adicionales aquí
+    // Reemplaza los siguientes valores con los de tu cuenta de EmailJS
+    const SERVICE_ID = "TU_SERVICE_ID";
+    const TEMPLATE_ID = "TU_TEMPLATE_ID";
+    // El init se hace en el index.html con tu PUBLIC_KEY
+    if (window.emailjs) {
+      window.emailjs.sendForm(SERVICE_ID, TEMPLATE_ID, form)
+        .then(function() {
+          successMsg.style.display = "block";
+          setTimeout(() => {
+            successMsg.style.display = "none";
+            form.reset();
+          }, 2500);
+        }, function(error) {
+          alert("Error sending message: " + error.text);
+        });
+    } else {
+      alert("EmailJS is not loaded. Check your CDN script in index.html.");
+    }
+  });
+
+  // Main layout
   const mainDiv = $("div", { class: "contact-layout" },
     $("h1", { class: "contact-title" }, "Contact Us"),
     $("p", { class: "contact-desc" }, "We would love to hear from you! Fill out the form below."),
